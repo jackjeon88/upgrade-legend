@@ -257,8 +257,7 @@ class _MainScreenState extends State<MainScreen> {
             children: [
               // 왼쪽: 장비 부위별 UI
         // 왼쪽: 장비 부위별 UI
-SizedBox(
-  width: 260,
+Expanded(
   child: Column(
     children: [
       GestureDetector(
@@ -278,16 +277,16 @@ SizedBox(
         ),
       ),
       Expanded(
-        child: SingleChildScrollView(
-          child: EquipmentUI(
+  child: EquipmentUI(
             gameState: _gameState,
             onEquipTap: (equip, index) {
               setState(() => _selectedEquip = equip);
               _showEquipOptions(equip, index);
             },
           ),
-        ),
       ),
+
+      
     ],
   ),
 ),
@@ -615,6 +614,29 @@ SizedBox(
                               fontSize: 11)),
                     ),
                   ),
+                  if (_multiSelect) ...[
+  const SizedBox(width: 6),
+  GestureDetector(
+    onTap: () => setState(() {
+      if (_selectedItems.length == filtered.length) {
+        _selectedItems.clear();
+      } else {
+        _selectedItems.addAll(filtered.map((e) => e.id));
+      }
+    }),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2A),
+        border: Border.all(color: const Color(0xFF2A2A3A)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        _selectedItems.length == filtered.length ? '전체해제' : '전체선택',
+        style: const TextStyle(color: Colors.grey, fontSize: 11)),
+    ),
+  ),
+],
                   const SizedBox(width: 6),
                   // 선택 판매 버튼
                   if (_multiSelect && _selectedItems.isNotEmpty)
@@ -1219,10 +1241,9 @@ Map<String, List<Equipment>> _getInventorySetGroups() {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildChargeOption('100 💎', '₩990', 100),
-            _buildChargeOption('550 💎 (+50)', '₩4,900', 550),
-            _buildChargeOption('1,200 💎 (+200) ⭐', '₩9,900', 1200),
-            _buildChargeOption('6,500 💎 (+1000)', '₩49,900', 6500),
+            _buildChargeOption('1,000 💎', '₩1,000', 1000),
+_buildChargeOption('40,000 💎 (+30,000) 🔥', '₩9,900', 40000),
+_buildChargeOption('1,100,000 💎 (+1,000,000) ⭐', '₩49,900', 1100000),
           ],
         ),
         actions: [
