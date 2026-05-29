@@ -92,6 +92,9 @@ const Map<ItemSlot, Map<ItemGrade, List<String>>> itemNames = {
     ItemGrade.legendary: ['신왕의 목걸이', '멸절의 목걸이', '창세의 목걸이', '용왕의 목걸이', '천계의 목걸이'],
   },
 };
+const List<double> goldBox100Rates = [0.20, 0.35, 0.30, 0.10, 0.04, 0.01];
+const List<double> diamondBox100Rates = [0.0, 0.10, 0.35, 0.35, 0.15, 0.05];
+
 
 // 기본 전투력 (등급별)
 const Map<ItemGrade, int> basePowerByGrade = {
@@ -155,24 +158,27 @@ Equipment generateItem(ItemGrade grade, {ItemSlot? slot}) {
   );
 }
 
-List<Equipment> openGoldBox({bool isTen = false}) {
-  final rates = isTen ? goldBox10Rates : goldBoxRates;
-  final count = isTen ? 10 : 1;
-  return List.generate(count, (_) {
-    final grade = _rollGrade(rates);
-    return generateItem(grade);
-  });
+/// 골드 상자 열기
+/// [isTen] 10연뽑 여부, [isHundred] 100연뽑 여부
+/// 10연뽑: 레어 이상 확률 상승 / 100연뽑: 유니크 이상 대폭 상승
+List<Equipment> openGoldBox({bool isTen = false, bool isHundred = false}) {
+  // 연뽑 수에 따라 확률 테이블 선택
+  final rates = isHundred ? goldBox100Rates : isTen ? goldBox10Rates : goldBoxRates;
+  // 연뽑 수에 따라 뽑기 횟수 결정
+  final count = isHundred ? 100 : isTen ? 10 : 1;
+  return List.generate(count, (_) => generateItem(_rollGrade(rates)));
 }
 
-List<Equipment> openDiamondBox({bool isTen = false}) {
-  final rates = isTen ? diamondBox10Rates : diamondBoxRates;
-  final count = isTen ? 10 : 1;
-  return List.generate(count, (_) {
-    final grade = _rollGrade(rates);
-    return generateItem(grade);
-  });
+/// 다이아 상자 열기
+/// [isTen] 10연뽑 여부, [isHundred] 100연뽑 여부
+/// 노멀 없음, 100연뽑 시 유니크 이상 집중
+List<Equipment> openDiamondBox({bool isTen = false, bool isHundred = false}) {
+  // 연뽑 수에 따라 확률 테이블 선택
+  final rates = isHundred ? diamondBox100Rates : isTen ? diamondBox10Rates : diamondBoxRates;
+  // 연뽑 수에 따라 뽑기 횟수 결정
+  final count = isHundred ? 100 : isTen ? 10 : 1;
+  return List.generate(count, (_) => generateItem(_rollGrade(rates)));
 }
-
 int getSellPrice(Equipment equip) {
   final base = sellPriceByGrade[equip.grade] ?? 500;
   return base + (equip.enhanceLevel * base * 0.5).toInt();

@@ -88,7 +88,7 @@ class _EquipmentUIState extends State<EquipmentUI> {
               final h = constraints.maxHeight;
 
               // 슬롯 크기
-              const slotSize = 44.0;
+              const slotSize = 62.0;
 
               return Stack(
                 children: [
@@ -227,14 +227,14 @@ class _EquipmentUIState extends State<EquipmentUI> {
                     const SizedBox(height: 1),
                     Text(
                       equip.name,
-                      style: TextStyle(color: complete ? Colors.white : color, fontSize: 6, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: complete ? Colors.white : color, fontSize: 7, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       '+${equip.enhanceLevel}',
-                      style: TextStyle(color: complete ? Colors.white : color, fontSize: 8, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: complete ? Colors.white : color, fontSize: 9, fontWeight: FontWeight.bold),
                     ),
                   ],
                 )

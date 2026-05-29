@@ -38,86 +38,94 @@ class _DungeonScreenState extends State<DungeonScreen>
   late Animation<double> _hitAnim;
 
   final List<Map<String, dynamic>> _dungeons = [
-    {
-      'name': '초보자의 동굴', 'requiredPower': 0,
-      'goldMin': 50, 'goldMax': 300,
-      'emoji': '🕳️', 'monster': '🐀',
-      'stoneMin': 0, 'stoneMax': 1,
-      'dropTable': [
-        {'grade': ItemGrade.normal, 'chance': 0.05},
-      ],
-    },
-    {
-      'name': '고블린 소굴', 'requiredPower': 2000,
-      'goldMin': 300, 'goldMax': 800,
-      'emoji': '👺', 'monster': '👺',
-      'stoneMin': 0, 'stoneMax': 1,
-      'dropTable': [
-        {'grade': ItemGrade.normal, 'chance': 0.10},
-        {'grade': ItemGrade.magic, 'chance': 0.02},
-      ],
-    },
-    {
-      'name': '해골 무덤', 'requiredPower': 6000,
-      'goldMin': 800, 'goldMax': 2000,
-      'emoji': '💀', 'monster': '💀',
-      'stoneMin': 1, 'stoneMax': 2,
-      'dropTable': [
-        {'grade': ItemGrade.normal, 'chance': 0.15},
-        {'grade': ItemGrade.magic, 'chance': 0.05},
-      ],
-    },
-    {
-      'name': '오크 요새', 'requiredPower': 15000,
-      'goldMin': 2000, 'goldMax': 5000,
-      'emoji': '🏰', 'monster': '👊',
-      'stoneMin': 1, 'stoneMax': 2,
-      'dropTable': [
-        {'grade': ItemGrade.magic, 'chance': 0.10},
-        {'grade': ItemGrade.rare, 'chance': 0.02},
-      ],
-    },
-    {
-      'name': '트롤 동굴', 'requiredPower': 35000,
-      'goldMin': 5000, 'goldMax': 12000,
-      'emoji': '👹', 'monster': '👹',
-      'stoneMin': 2, 'stoneMax': 3,
-      'dropTable': [
-        {'grade': ItemGrade.magic, 'chance': 0.15},
-        {'grade': ItemGrade.rare, 'chance': 0.05},
-      ],
-    },
-    {
-      'name': '드래곤 둥지', 'requiredPower': 80000,
-      'goldMin': 12000, 'goldMax': 30000,
-      'emoji': '🐉', 'monster': '🐉',
-      'stoneMin': 2, 'stoneMax': 4,
-      'dropTable': [
-        {'grade': ItemGrade.rare, 'chance': 0.10},
-        {'grade': ItemGrade.unique, 'chance': 0.01},
-      ],
-    },
-    {
-      'name': '마왕의 성', 'requiredPower': 160000,
-      'goldMin': 30000, 'goldMax': 80000,
-      'emoji': '👿', 'monster': '👿',
-      'stoneMin': 3, 'stoneMax': 5,
-      'dropTable': [
-        {'grade': ItemGrade.rare, 'chance': 0.15},
-        {'grade': ItemGrade.unique, 'chance': 0.03},
-      ],
-    },
-    {
-      'name': '신계의 탑', 'requiredPower': 350000,
-      'goldMin': 80000, 'goldMax': 200000,
-      'emoji': '🗼', 'monster': '⚡',
-      'stoneMin': 4, 'stoneMax': 6,
-      'dropTable': [
-        {'grade': ItemGrade.unique, 'chance': 0.05},
-        {'grade': ItemGrade.epic, 'chance': 0.01},
-      ],
-    },
-  ];
+  {
+    'name': '초보자의 동굴', 'requiredPower': 0,
+    'goldMin': 50, 'goldMax': 300,
+    'emoji': '🕳️', 'monster': '🐀',
+    'stoneMin': 0, 'stoneMax': 1,
+    'diamondMin': 0, 'diamondMax': 0, 'diamondChance': 0.0, // 다이아 없음
+    'dropTable': [
+      {'grade': ItemGrade.normal, 'chance': 0.05},
+    ],
+  },
+  {
+    'name': '고블린 소굴', 'requiredPower': 2000,
+    'goldMin': 300, 'goldMax': 800,
+    'emoji': '👺', 'monster': '👺',
+    'stoneMin': 0, 'stoneMax': 1,
+    'diamondMin': 0, 'diamondMax': 0, 'diamondChance': 0.0,
+    'dropTable': [
+      {'grade': ItemGrade.normal, 'chance': 0.10},
+      {'grade': ItemGrade.magic, 'chance': 0.02},
+    ],
+  },
+  {
+    'name': '해골 무덤', 'requiredPower': 6000,
+    'goldMin': 800, 'goldMax': 2000,
+    'emoji': '💀', 'monster': '💀',
+    'stoneMin': 1, 'stoneMax': 2,
+    'diamondMin': 0, 'diamondMax': 0, 'diamondChance': 0.0,
+    'dropTable': [
+      {'grade': ItemGrade.normal, 'chance': 0.15},
+      {'grade': ItemGrade.magic, 'chance': 0.05},
+    ],
+  },
+  {
+    'name': '오크 요새', 'requiredPower': 15000,
+    'goldMin': 2000, 'goldMax': 5000,
+    'emoji': '🏰', 'monster': '👊',
+    'stoneMin': 1, 'stoneMax': 2,
+    'diamondMin': 1, 'diamondMax': 1, 'diamondChance': 0.10, // 10% 확률로 💎1
+    'dropTable': [
+      {'grade': ItemGrade.magic, 'chance': 0.10},
+      {'grade': ItemGrade.rare, 'chance': 0.02},
+    ],
+  },
+  {
+    'name': '트롤 동굴', 'requiredPower': 35000,
+    'goldMin': 5000, 'goldMax': 12000,
+    'emoji': '👹', 'monster': '👹',
+    'stoneMin': 2, 'stoneMax': 3,
+    'diamondMin': 1, 'diamondMax': 2, 'diamondChance': 0.20, // 20% 확률로 💎1~2
+    'dropTable': [
+      {'grade': ItemGrade.magic, 'chance': 0.15},
+      {'grade': ItemGrade.rare, 'chance': 0.05},
+    ],
+  },
+  {
+    'name': '드래곤 둥지', 'requiredPower': 80000,
+    'goldMin': 12000, 'goldMax': 30000,
+    'emoji': '🐉', 'monster': '🐉',
+    'stoneMin': 2, 'stoneMax': 4,
+    'diamondMin': 2, 'diamondMax': 3, 'diamondChance': 0.30, // 30% 확률로 💎2~3
+    'dropTable': [
+      {'grade': ItemGrade.rare, 'chance': 0.10},
+      {'grade': ItemGrade.unique, 'chance': 0.01},
+    ],
+  },
+  {
+    'name': '마왕의 성', 'requiredPower': 160000,
+    'goldMin': 30000, 'goldMax': 80000,
+    'emoji': '👿', 'monster': '👿',
+    'stoneMin': 3, 'stoneMax': 5,
+    'diamondMin': 3, 'diamondMax': 5, 'diamondChance': 0.40, // 40% 확률로 💎3~5
+    'dropTable': [
+      {'grade': ItemGrade.rare, 'chance': 0.15},
+      {'grade': ItemGrade.unique, 'chance': 0.03},
+    ],
+  },
+  {
+    'name': '신계의 탑', 'requiredPower': 350000,
+    'goldMin': 80000, 'goldMax': 200000,
+    'emoji': '🗼', 'monster': '⚡',
+    'stoneMin': 4, 'stoneMax': 6,
+    'diamondMin': 5, 'diamondMax': 10, 'diamondChance': 0.50, // 50% 확률로 💎5~10
+    'dropTable': [
+      {'grade': ItemGrade.unique, 'chance': 0.05},
+      {'grade': ItemGrade.epic, 'chance': 0.01},
+    ],
+  },
+];
 
   // 착용 장비에 따른 전투 이펙트
   List<String> _getWeaponEffects(GameState gs) {
@@ -244,7 +252,7 @@ class _DungeonScreenState extends State<DungeonScreen>
 
       if (tick >= totalTicks) {
         t.cancel();
-        _onClearComplete(dungeon, power);
+        _onClearComplete(dungeon, power, clearTimeMs);
       }
     });
   }
@@ -254,47 +262,74 @@ class _DungeonScreenState extends State<DungeonScreen>
     '⚡ 번개 강타!', '💫 연속 공격!', '🌟 필살기!',
   ];
 
-  void _onClearComplete(Map<String, dynamic> dungeon, int power) async {
-    final random = Random();
-    final required = dungeon['requiredPower'] as int;
-    final goldMin = dungeon['goldMin'] as int;
-    final goldMax = dungeon['goldMax'] as int;
-    final stoneMin = dungeon['stoneMin'] as int;
-    final stoneMax = dungeon['stoneMax'] as int;
+  void _onClearComplete(Map<String, dynamic> dungeon, int power, int clearTimeMs) async {
+  final random = Random();
+  final required = dungeon['requiredPower'] as int;
+  final goldMin = dungeon['goldMin'] as int;
+  final goldMax = dungeon['goldMax'] as int;
+  final stoneMin = dungeon['stoneMin'] as int;
+  final stoneMax = dungeon['stoneMax'] as int;
+  final diamondChance = (dungeon['diamondChance'] ?? 0.0) as double;
+  final diamondMin = (dungeon['diamondMin'] ?? 0) as int;
+  final diamondMax = (dungeon['diamondMax'] ?? 0) as int;
 
-    // 골드 계산 (전투력 보너스)
-    final base = random.nextInt(goldMax - goldMin) + goldMin;
-    final effectiveRequired = required <= 0 ? 100 : required;
-    final bonus = power >= effectiveRequired * 2 ? (base * 0.3).toInt() : 0;
-    final totalGold = base + bonus;
+  // 골드 계산 (전투력이 2배 이상이면 30% 보너스)
+  final base = random.nextInt(goldMax - goldMin) + goldMin;
+  final effectiveRequired = required <= 0 ? 100 : required;
+  final bonus = power >= effectiveRequired * 2 ? (base * 0.3).toInt() : 0;
+  final totalGold = base + bonus;
 
-    // 강화석 드롭
-    final stoneDrop = stoneMin + random.nextInt(stoneMax - stoneMin + 1);
+  // 강화석 드롭
+  final stoneDrop = stoneMin + random.nextInt(stoneMax - stoneMin + 1);
 
-    // 장비 드롭
-    Equipment? droppedItem;
-    final dropTable = dungeon['dropTable'] as List;
-    for (final drop in dropTable) {
-      if (random.nextDouble() < (drop['chance'] as double)) {
-        droppedItem = generateItem(drop['grade'] as ItemGrade);
-        break;
-      }
-    }
-
-    widget.gameState.gold += totalGold;
-    widget.gameState.enhanceStone += stoneDrop;
-    if (droppedItem != null) widget.gameState.inventory.add(droppedItem);
-    widget.onStateChanged();
-
-    setState(() {
-      _isClearing = false;
-      _battleStage = 3;
-      _battleProgress = 1.0;
-      _battleMessage = '🏆 클리어!\n💰 +${_formatNumber(totalGold)}'
-          '${stoneDrop > 0 ? '  🔮 +$stoneDrop' : ''}'
-          '${droppedItem != null ? '\n🎁 ${droppedItem.name} 획득!' : ''}';
-    });
+  // 다이아 드롭
+  int diamondDrop = 0;
+  if (diamondChance > 0 && random.nextDouble() < diamondChance) {
+    diamondDrop = diamondMin + random.nextInt(diamondMax - diamondMin + 1);
   }
+
+  // 장비 드롭
+  Equipment? droppedItem;
+  final dropTable = dungeon['dropTable'] as List;
+  for (final drop in dropTable) {
+    if (random.nextDouble() < (drop['chance'] as double)) {
+      droppedItem = generateItem(drop['grade'] as ItemGrade);
+      break;
+    }
+  }
+
+  // 보상 적용
+  widget.gameState.gold += totalGold;
+  widget.gameState.enhanceStone += stoneDrop;
+  if (diamondDrop > 0) widget.gameState.diamond += diamondDrop;
+  if (droppedItem != null) widget.gameState.inventory.add(droppedItem);
+  widget.onStateChanged();
+
+  // 기본 클리어 시간 (전투력 = 필요전투력 기준)
+  final baseClearTimeMs = _calcClearTimeMs(required <= 0 ? 100 : required, required <= 0 ? 100 : required);
+  final actualSec = (clearTimeMs / 1000).toStringAsFixed(1);
+  final baseSec = (baseClearTimeMs / 1000).toStringAsFixed(1);
+  final savedSec = ((baseClearTimeMs - clearTimeMs) / 1000).toStringAsFixed(1);
+
+  // 클리어 시간 표기 (단축된 경우만 표시)
+  String timeMsg = '⏱ ${actualSec}초';
+  if (baseClearTimeMs > clearTimeMs) {
+    timeMsg += ' (-${savedSec}초 단축)';
+  }
+
+  // 클리어 메시지 구성
+  String msg = '🏆 클리어!  $timeMsg\n💰 +${_formatNumber(totalGold)}';
+  if (stoneDrop > 0) msg += '  🔮 +$stoneDrop';
+  if (diamondDrop > 0) msg += '  💎 +$diamondDrop';
+  if (droppedItem != null) msg += '\n🎁 ${droppedItem.name} 획득!';
+
+  setState(() {
+    _isClearing = false;
+    _battleStage = 3;
+    _battleProgress = 1.0;
+    _battleMessage = msg;
+  });
+}
 
   String _formatNumber(int n) {
     if (n >= 1000000000) return '${(n / 1000000000).toStringAsFixed(1)}B';
@@ -502,22 +537,28 @@ class _DungeonScreenState extends State<DungeonScreen>
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       )),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        powerOk
-                            ? '💰 ${_formatNumber(dungeon['goldMin'])}~${_formatNumber(dungeon['goldMax'])}  예상 ${(clearTimeMs / 1000).toStringAsFixed(1)}초'
-                            : '필요 전투력: ${_formatNumber(required)}',
-                        style: TextStyle(
-                          color: powerOk ? Colors.green : Colors.red,
-                          fontSize: 11,
-                        ),
-                      ),
-                      Text('소모 에너지: ${GameState.dungeonEnergyCost}',
-                          style: const TextStyle(color: Colors.grey, fontSize: 10)),
-                    ],
-                  ),
+subtitle: Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  children: [
+    Text(
+      powerOk
+          ? '💰 ${_formatNumber(dungeon['goldMin'])}~${_formatNumber(dungeon['goldMax'])}'
+            '  🔮 ${dungeon['stoneMin']}~${dungeon['stoneMax']}개'
+            '${((dungeon['diamondChance'] ?? 0.0) as double) > 0 ? '  💎 ${dungeon['diamondMin']}~${dungeon['diamondMax']} (${(((dungeon['diamondChance'] ?? 0.0) as double) * 100).toInt()}%)' : ''}'
+          : '필요 전투력: ${_formatNumber(required)}',
+      style: TextStyle(
+        color: powerOk ? Colors.green : Colors.red,
+        fontSize: 11,
+      ),
+    ),
+    Text(
+      powerOk
+          ? '⏱ 예상 ${(clearTimeMs / 1000).toStringAsFixed(1)}초  ⚡ ${GameState.dungeonEnergyCost} 소모'
+          : '⚡ ${GameState.dungeonEnergyCost} 소모',
+      style: const TextStyle(color: Colors.grey, fontSize: 10),
+    ),
+  ],
+),
                   trailing: ElevatedButton(
                     onPressed: canEnter ? () => _enterDungeon(dungeon) : null,
                     style: ElevatedButton.styleFrom(

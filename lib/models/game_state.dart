@@ -21,7 +21,8 @@ class GameState {
   // 피로도 시스템
   int energy;
   static const int maxEnergy = 200;
-  static const int dungeonEnergyCost = 30;
+// 던전 1회 입장 에너지 소모량 (기존 30 → 10으로 감소)
+  static const int dungeonEnergyCost = 10;
   static const int energyRechargeSeconds = 300;
   DateTime lastEnergyUpdate;
 
@@ -105,41 +106,52 @@ class GameState {
     }
   }
 
-  EnhanceResult tryEnhance(Equipment equipment, {bool useProtect = false}) {
-    final data = getEnhanceData(equipment.grade, equipment.enhanceLevel);
-    if (data == null) return EnhanceResult.fail;
-    if (gold < data.goldCost) return EnhanceResult.fail;
-    if (enhanceStone < data.stoneCost) return EnhanceResult.fail;
+ /// 강화 시도
+/// [useProtect] 파괴방지권 사용 여부
+/// - 성공: 강화 수치 +1
+/// - 실패 + 파괴 판정 + 방지권 있음: 그냥 실패 (수치 유지)
+/// - 실패 + 파괴 판정 + 방지권 없음: 장비 완전 삭제
+EnhanceResult tryEnhance(Equipment equipment, {bool useProtect = false}) {
+  final data = getEnhanceData(equipment.grade, equipment.enhanceLevel);
+  if (data == null) return EnhanceResult.fail;
+  if (gold < data.goldCost) return EnhanceResult.fail;
+  if (enhanceStone < data.stoneCost) return EnhanceResult.fail;
 
-    gold -= data.goldCost;
-    enhanceStone -= data.stoneCost;
-    totalGoldSpent += data.goldCost;
-    totalEnhanceCount++;
+  // 재료 차감
+  gold -= data.goldCost;
+  enhanceStone -= data.stoneCost;
+  totalGoldSpent += data.goldCost;
+  totalEnhanceCount++;
 
-    final random = Random();
-    final roll = random.nextDouble();
+  final random = Random();
+  final roll = random.nextDouble();
 
-    if (roll < data.successRate) {
-      equipment.enhanceLevel++;
-      successCount++;
-      return EnhanceResult.success;
-    } else {
-      final destroyRoll = random.nextDouble();
-      if (destroyRoll < data.destroyRate) {
-        if (useProtect && protectScroll > 0) {
-          protectScroll--;
-          failCount++;
-          return EnhanceResult.fail;
-        }
-        equipment.enhanceLevel = max(0, equipment.enhanceLevel - 2);
-        destroyCount++;
-        return EnhanceResult.destroy;
-      } else {
-        failCount++;
-        return EnhanceResult.fail;
-      }
-    }
+  // 성공 판정
+  if (roll < data.successRate) {
+    equipment.enhanceLevel++;
+    successCount++;
+    return EnhanceResult.success;
   }
+
+  // 실패 → 파괴 판정
+  final destroyRoll = random.nextDouble();
+  if (destroyRoll < data.destroyRate) {
+    // 파괴 판정 성공
+    if (useProtect && protectScroll > 0) {
+      // 방지권 있으면 소모 후 그냥 실패 (수치 유지)
+      protectScroll--;
+      failCount++;
+      return EnhanceResult.fail;
+    }
+    // 방지권 없으면 완전 삭제
+    destroyCount++;
+    return EnhanceResult.destroy;
+  }
+
+  // 일반 실패 (파괴 판정 안 뜸)
+  failCount++;
+  return EnhanceResult.fail;
+}
 
   void buyStoneWithGold() {
     if (gold >= 500) {

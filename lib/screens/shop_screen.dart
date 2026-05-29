@@ -38,33 +38,40 @@ class _ShopScreenState extends State<ShopScreen> {
     }
   }
 
-  void _openGoldBox({bool isTen = false}) {
-    final gs = widget.gameState;
-    final cost = isTen ? 90000 : 10000;
-    if (gs.gold < cost) {
-      setState(() => _lastResult = '💰 골드가 부족합니다!');
-      return;
-    }
-    gs.gold -= cost;
-    final items = openGoldBox(isTen: isTen);
-    gs.inventory.addAll(items);
-    widget.onStateChanged();
-    _showGachaResult(List.from(items), isGoldBox: true, isTen: isTen);
+/// 골드 상자 뽑기 실행
+/// [isTen] 10연뽑, [isHundred] 100연뽑
+/// 비용: 1회 10,000 / 10회 90,000 / 100회 800,000
+void _openGoldBox({bool isTen = false, bool isHundred = false}) {
+  final gs = widget.gameState;
+  // 연뽑 종류에 따른 비용 계산
+  final cost = isHundred ? 800000 : isTen ? 90000 : 10000;
+  if (gs.gold < cost) {
+    setState(() => _lastResult = '💰 골드가 부족합니다!');
+    return;
   }
-
-  void _openDiamondBox({bool isTen = false}) {
-    final gs = widget.gameState;
-    final cost = isTen ? 900 : 100;
-    if (gs.diamond < cost) {
-      setState(() => _lastResult = '💎 다이아가 부족합니다!');
-      return;
-    }
-    gs.diamond -= cost;
-    final items = openDiamondBox(isTen: isTen);
-    gs.inventory.addAll(items);
-    widget.onStateChanged();
-    _showGachaResult(List.from(items), isGoldBox: false, isTen: isTen);
+  gs.gold -= cost;
+  final items = openGoldBox(isTen: isTen, isHundred: isHundred);
+  gs.inventory.addAll(items);
+  widget.onStateChanged();
+  _showGachaResult(List.from(items), isGoldBox: true, isTen: isTen, isHundred: isHundred);
   }
+/// 다이아 상자 뽑기 실행
+/// [isTen] 10연뽑, [isHundred] 100연뽑
+/// 비용: 1회 100 / 10회 900 / 100회 8,000
+void _openDiamondBox({bool isTen = false, bool isHundred = false}) {
+  final gs = widget.gameState;
+  // 연뽑 종류에 따른 비용 계산
+  final cost = isHundred ? 8000 : isTen ? 900 : 100;
+  if (gs.diamond < cost) {
+    setState(() => _lastResult = '💎 다이아가 부족합니다!');
+    return;
+  }
+  gs.diamond -= cost;
+  final items = openDiamondBox(isTen: isTen, isHundred: isHundred);
+  gs.inventory.addAll(items);
+  widget.onStateChanged();
+  _showGachaResult(List.from(items), isGoldBox: false, isTen: isTen, isHundred: isHundred);
+}
 
   void _buyStoneGold() {
     final gs = widget.gameState;
@@ -89,107 +96,152 @@ class _ShopScreenState extends State<ShopScreen> {
     widget.onStateChanged();
     setState(() => _lastResult = '🔮 강화석 10개 구매 완료!');
   }
+/// 강화석 100개 구매 (다이아 250 / 10개짜리 30 x 10 = 300 대비 17% 할인)
+void _buyStoneHundred() {
+  final gs = widget.gameState;
+  if (gs.diamond < 250) {
+    setState(() => _lastResult = '💎 다이아가 부족합니다!');
+    return;
+  }
+  gs.diamond -= 250;
+  gs.enhanceStone += 100;
+  widget.onStateChanged();
+  setState(() => _lastResult = '🔮 강화석 100개 구매 완료! (💎250)');
+}
 
-  void _exchangeDiamond() {
-    final gs = widget.gameState;
-    if (gs.diamond < 1) {
-      setState(() => _lastResult = '💎 다이아가 없습니다!');
-      return;
-    }
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+/// 다이아 → 골드 환전 팝업
+/// 팝업 닫지 않고 연속 환전 가능, 보유량 실시간 반영
+void _exchangeDiamond() {
+  final gs = widget.gameState;
+  if (gs.diamond < 1) {
+    setState(() => _lastResult = '💎 다이아가 없습니다!');
+    return;
+  }
+  showDialog(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setDialogState) => AlertDialog(
         backgroundColor: const Color(0xFF111118),
         title: const Text('💎 → 💰 환전',
             style: TextStyle(color: Color(0xFFF5C842))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // 보유 다이아 실시간 표시
             Text('보유 다이아: ${gs.diamond} 💎',
                 style: const TextStyle(color: Colors.white)),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             const Text('💎 1 = 💰 1,000',
                 style: TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 16),
-            _buildExchangeOption(10, gs),
-            _buildExchangeOption(100, gs),
-            _buildExchangeOption(500, gs),
+            _buildExchangeOption(10, gs, setDialogState: setDialogState),
+            _buildExchangeOption(100, gs, setDialogState: setDialogState),
+            _buildExchangeOption(500, gs, setDialogState: setDialogState),
             if (gs.diamond > 0)
-              _buildExchangeOption(gs.diamond, gs, label: '전체'),
+              _buildExchangeOption(gs.diamond, gs,
+                  label: '전체', setDialogState: setDialogState),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소', style: TextStyle(color: Colors.grey)),
+            child: const Text('닫기', style: TextStyle(color: Colors.grey)),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildExchangeOption(int amount, GameState gs, {String? label}) {
-    final canExchange = gs.diamond >= amount;
-    return GestureDetector(
-      onTap: canExchange
-          ? () {
-              gs.exchangeDiamondToGold(amount);
-              widget.onStateChanged();
-              Navigator.pop(context);
-              setState(() => _lastResult =
-                  '💱 💎$amount → 💰${_formatNumber(amount * 1000)} 환전 완료!');
-            }
-          : null,
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: canExchange ? const Color(0xFF1A1A2A) : const Color(0xFF0A0A0F),
-          border: Border.all(
-              color: canExchange ? const Color(0xFF2A2A4A) : const Color(0xFF1A1A1A)),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('💎 ${label ?? amount}',
-                style: TextStyle(
-                    color: canExchange ? Colors.white : Colors.grey,
-                    fontWeight: FontWeight.bold)),
-            Text('→ 💰 ${_formatNumber(amount * 1000)}',
-                style: TextStyle(
-                    color: canExchange ? const Color(0xFFF5C842) : Colors.grey)),
-          ],
-        ),
+  /// 환전 옵션 버튼
+/// [amount] 환전할 다이아 수량
+/// [label] 버튼 표시 텍스트 (없으면 amount 그대로 표시)
+/// [setDialogState] 팝업 내 상태 갱신용 (실시간 다이아 업데이트)
+Widget _buildExchangeOption(int amount, GameState gs, {
+  String? label,
+  StateSetter? setDialogState,
+}) {
+  final canExchange = gs.diamond >= amount;
+  return GestureDetector(
+    onTap: canExchange
+        ? () {
+            gs.exchangeDiamondToGold(amount);
+            widget.onStateChanged();
+            // 팝업 닫지 않고 내부 상태만 갱신
+            setDialogState?.call(() {});
+            setState(() => _lastResult =
+                '💱 💎$amount → 💰${_formatNumber(amount * 1000)} 환전 완료!');
+          }
+        : null,
+    child: Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: canExchange ? const Color(0xFF1A1A2A) : const Color(0xFF0A0A0F),
+        border: Border.all(
+            color: canExchange ? const Color(0xFF2A2A4A) : const Color(0xFF1A1A1A)),
+        borderRadius: BorderRadius.circular(6),
       ),
-    );
-  }
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text('💎 ${label ?? amount}',
+              style: TextStyle(
+                  color: canExchange ? Colors.white : Colors.grey,
+                  fontWeight: FontWeight.bold)),
+          Text('→ 💰 ${_formatNumber(amount * 1000)}',
+              style: TextStyle(
+                  color: canExchange ? const Color(0xFFF5C842) : Colors.grey)),
+        ],
+      ),
+    ),
+  );
+}
 
-  void _showGachaResult(List<Equipment> items, {required bool isGoldBox, required bool isTen}) {
+
+  /// 뽑기 결과 팝업 표시
+/// [isGoldBox] 골드/다이아 상자 구분
+/// [isTen] 10연뽑 여부, [isHundred] 100연뽑 여부
+
+  /// 뽑기 결과 팝업 표시
+/// [isGoldBox] 골드/다이아 상자 구분
+/// [isTen] 10연뽑 여부, [isHundred] 100연뽑 여부
+void _showGachaResult(List<Equipment> items, {
+  required bool isGoldBox,
+  required bool isTen,
+  bool isHundred = false,
+}) {
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           final gs = widget.gameState;
 
-          void _reroll(bool ten) {
-            final cost = isGoldBox ? (ten ? 90000 : 10000) : (ten ? 900 : 100);
-            final hasEnough = isGoldBox ? gs.gold >= cost : gs.diamond >= cost;
-            if (!hasEnough) {
-              setDialogState(() {});
-              return;
-            }
-            if (isGoldBox) gs.gold -= cost;
-            else gs.diamond -= cost;
-            final newItems = isGoldBox ? openGoldBox(isTen: ten) : openDiamondBox(isTen: ten);
-            gs.inventory.addAll(newItems);
-            widget.onStateChanged();
-            setDialogState(() {
-              items.clear();
-              items.addAll(newItems);
-            });
-          }
+/// 팝업 내 다시뽑기
+/// [ten] 10연뽑 여부, [hundred] 100연뽑 여부
+void _reroll(bool ten, bool hundred) {
+  // 연뽑 종류에 따른 비용 계산
+  final cost = isGoldBox
+      ? (hundred ? 800000 : ten ? 90000 : 10000)
+      : (hundred ? 8000 : ten ? 900 : 100);
+  final hasEnough = isGoldBox ? gs.gold >= cost : gs.diamond >= cost;
+  if (!hasEnough) { setDialogState(() {}); return; }
+
+  // 비용 차감
+  if (isGoldBox) gs.gold -= cost;
+  else gs.diamond -= cost;
+
+  // 새 아이템 생성 후 인벤토리 추가
+  final newItems = isGoldBox
+      ? openGoldBox(isTen: ten, isHundred: hundred)
+      : openDiamondBox(isTen: ten, isHundred: hundred);
+  gs.inventory.addAll(newItems);
+  widget.onStateChanged();
+  setDialogState(() { items.clear(); items.addAll(newItems); });
+}
+
+
 
           return AlertDialog(
             backgroundColor: const Color(0xFF111118),
@@ -244,51 +296,77 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                   const SizedBox(height: 12),
                   // 다시 뽑기 버튼
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _reroll(false),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isGoldBox
-                                  ? (gs.gold >= 10000 ? const Color(0xFF2A3A1A) : const Color(0xFF0A0A0F))
-                                  : (gs.diamond >= 100 ? const Color(0xFF1A1A3A) : const Color(0xFF0A0A0F)),
-                              border: Border.all(color: const Color(0xFF3A3A5A)),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              isGoldBox ? '🔄 1회 (💰10,000)' : '🔄 1회 (💎100)',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.white70, fontSize: 11),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _reroll(true),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isGoldBox
-                                  ? (gs.gold >= 90000 ? const Color(0xFF2A3A1A) : const Color(0xFF0A0A0F))
-                                  : (gs.diamond >= 900 ? const Color(0xFF1A1A3A) : const Color(0xFF0A0A0F)),
-                              border: Border.all(color: const Color(0xFF3A3A5A)),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              isGoldBox ? '🔄 10회 (💰90,000)' : '🔄 10회 (💎900)',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.white70, fontSize: 11),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                 // 다시뽑기 버튼 3개: 1회 / 10회 / 100회
+Row(
+  children: [
+    // 1회 다시뽑기
+    Expanded(
+      child: GestureDetector(
+        onTap: () => _reroll(false, false),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isGoldBox
+                ? (gs.gold >= 10000 ? const Color(0xFF2A3A1A) : const Color(0xFF0A0A0F))
+                : (gs.diamond >= 100 ? const Color(0xFF1A1A3A) : const Color(0xFF0A0A0F)),
+            border: Border.all(color: const Color(0xFF3A3A5A)),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            isGoldBox ? '1회\n💰10,000' : '1회\n💎100',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70, fontSize: 10),
+          ),
+        ),
+      ),
+    ),
+    const SizedBox(width: 4),
+    // 10회 다시뽑기
+    Expanded(
+      child: GestureDetector(
+        onTap: () => _reroll(true, false),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isGoldBox
+                ? (gs.gold >= 90000 ? const Color(0xFF2A3A1A) : const Color(0xFF0A0A0F))
+                : (gs.diamond >= 900 ? const Color(0xFF1A1A3A) : const Color(0xFF0A0A0F)),
+            border: Border.all(color: const Color(0xFF3A3A5A)),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            isGoldBox ? '10회\n💰90,000' : '10회\n💎900',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70, fontSize: 10),
+          ),
+        ),
+      ),
+    ),
+    const SizedBox(width: 4),
+    // 100회 다시뽑기 (최고 확률, 강조 표시)
+    Expanded(
+      child: GestureDetector(
+        onTap: () => _reroll(false, true),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isGoldBox
+                ? (gs.gold >= 800000 ? const Color(0xFF3A2A1A) : const Color(0xFF0A0A0F))
+                : (gs.diamond >= 8000 ? const Color(0xFF2A1A3A) : const Color(0xFF0A0A0F)),
+            border: Border.all(color: Colors.amber.withOpacity(0.5)),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            isGoldBox ? '100회\n💰800,000' : '100회\n💎8,000',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+                color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+    ),
+  ],
+),
                 ],
               ),
             ),
@@ -334,28 +412,33 @@ class _ShopScreenState extends State<ShopScreen> {
             '노멀 60% / 매직 28% / 레어 9%',
             '유니크 2.5% / 에픽 0.4% / 레전더리 0.1%',
           ]),
-          Row(
-            children: [
-              Expanded(
-                child: _buildShopButton(
-                  label: '1회 뽑기', price: '💰 10,000',
-                  canAfford: gs.gold >= 10000,
-                  onTap: () => _openGoldBox(),
-                  color: const Color(0xFF2A3A1A),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildShopButton(
-                  label: '10회 뽑기', price: '💰 90,000',
-                  subtitle: '확률 UP!',
-                  canAfford: gs.gold >= 90000,
-                  onTap: () => _openGoldBox(isTen: true),
-                  color: const Color(0xFF2A3A1A),
-                ),
-              ),
-            ],
-          ),
+// 골드 상자 뽑기 버튼: 1회 / 10회 / 100회
+Row(
+  children: [
+    Expanded(child: _buildShopButton(
+      label: '1회 뽑기', price: '💰 10,000',
+      canAfford: gs.gold >= 10000,
+      onTap: () => _openGoldBox(),
+      color: const Color(0xFF2A3A1A),
+    )),
+    const SizedBox(width: 6),
+    Expanded(child: _buildShopButton(
+      label: '10회 뽑기', price: '💰 90,000',
+      subtitle: '확률 UP!',
+      canAfford: gs.gold >= 90000,
+      onTap: () => _openGoldBox(isTen: true),
+      color: const Color(0xFF2A3A1A),
+    )),
+    const SizedBox(width: 6),
+    Expanded(child: _buildShopButton(
+      label: '100회 뽑기', price: '💰 850,000',
+      subtitle: '🔥 최고 확률!',
+      canAfford: gs.gold >= 850000,
+      onTap: () => _openGoldBox(isHundred: true),
+      color: const Color(0xFF3A2A1A),
+    )),
+  ],
+),
 
           const SizedBox(height: 16),
 
@@ -364,53 +447,63 @@ class _ShopScreenState extends State<ShopScreen> {
             '매직 35% / 레어 40% / 유니크 18%',
             '에픽 5.5% / 레전더리 1.5%',
           ]),
-          Row(
-            children: [
-              Expanded(
-                child: _buildShopButton(
-                  label: '1회 뽑기', price: '💎 100',
-                  canAfford: gs.diamond >= 100,
-                  onTap: () => _openDiamondBox(),
-                  color: const Color(0xFF1A1A3A),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildShopButton(
-                  label: '10회 뽑기', price: '💎 900',
-                  subtitle: '확률 UP!',
-                  canAfford: gs.diamond >= 900,
-                  onTap: () => _openDiamondBox(isTen: true),
-                  color: const Color(0xFF1A1A3A),
-                ),
-              ),
-            ],
-          ),
+        // 다이아 상자 뽑기 버튼: 1회 / 10회 / 100회
+Row(
+  children: [
+    Expanded(child: _buildShopButton(
+      label: '1회 뽑기', price: '💎 100',
+      canAfford: gs.diamond >= 100,
+      onTap: () => _openDiamondBox(),
+      color: const Color(0xFF1A1A3A),
+    )),
+    const SizedBox(width: 6),
+    Expanded(child: _buildShopButton(
+      label: '10회 뽑기', price: '💎 900',
+      subtitle: '확률 UP!',
+      canAfford: gs.diamond >= 900,
+      onTap: () => _openDiamondBox(isTen: true),
+      color: const Color(0xFF1A1A3A),
+    )),
+    const SizedBox(width: 6),
+    Expanded(child: _buildShopButton(
+      label: '100회 뽑기', price: '💎 8,000',
+      subtitle: '🔥 최고 확률!',
+      canAfford: gs.diamond >= 8000,
+      onTap: () => _openDiamondBox(isHundred: true),
+      color: const Color(0xFF2A1A3A),
+    )),
+  ],
+),
 
           const SizedBox(height: 16),
 
           _buildSectionTitle('🔮 강화석 구매'),
-          Row(
-            children: [
-              Expanded(
-                child: _buildShopButton(
-                  label: '1개', price: '💰 500',
-                  canAfford: gs.gold >= 500,
-                  onTap: _buyStoneGold,
-                  color: const Color(0xFF2A2A1A),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildShopButton(
-                  label: '10개', price: '💎 30',
-                  canAfford: gs.diamond >= 30,
-                  onTap: _buyStoneDiamond,
-                  color: const Color(0xFF1A1A3A),
-                ),
-              ),
-            ],
-          ),
+// 강화석 구매: 1개(골드) / 10개(다이아) / 100개(다이아 할인)
+Row(
+  children: [
+    Expanded(child: _buildShopButton(
+      label: '1개', price: '💰 500',
+      canAfford: gs.gold >= 500,
+      onTap: _buyStoneGold,
+      color: const Color(0xFF2A2A1A),
+    )),
+    const SizedBox(width: 6),
+    Expanded(child: _buildShopButton(
+      label: '10개', price: '💎 30',
+      canAfford: gs.diamond >= 30,
+      onTap: _buyStoneDiamond,
+      color: const Color(0xFF1A1A3A),
+    )),
+    const SizedBox(width: 6),
+    Expanded(child: _buildShopButton(
+      label: '100개', price: '💎 250',
+      subtitle: '🔥 17% 할인!',
+      canAfford: gs.diamond >= 250,
+      onTap: _buyStoneHundred,
+      color: const Color(0xFF2A1A3A),
+    )),
+  ],
+),
 
           const SizedBox(height: 16),
 
