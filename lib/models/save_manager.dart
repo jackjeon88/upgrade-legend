@@ -1,7 +1,10 @@
+// lib/models/save_manager.dart
+
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'equipment.dart';
 import 'game_state.dart';
+import 'attendance.dart';
 
 class SaveManager {
   static const String _key = 'game_save';
@@ -48,6 +51,8 @@ class SaveManager {
       'totalGoldSpent': s.totalGoldSpent,
       'equipped': s.equipped.map(_encodeEquip).toList(),
       'inventory': s.inventory.map(_encodeEquip).toList(),
+      'attendance': s.attendance.toJson(),           // ✅ 출석
+      'premiumChargeCount': s.premiumChargeCount,    // ✅ 강화 성공률 부스터
     };
   }
 
@@ -75,6 +80,10 @@ class SaveManager {
               ?.map((e) => _decodeEquip(e))
               .toList() ??
           [],
+      attendance: data['attendance'] != null
+          ? AttendanceState.fromJson(data['attendance'])
+          : const AttendanceState(),                          // ✅ 출석
+      premiumChargeCount: data['premiumChargeCount'] ?? 0,   // ✅ 강화 성공률 부스터
     );
   }
 

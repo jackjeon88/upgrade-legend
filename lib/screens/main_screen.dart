@@ -7,6 +7,11 @@ import 'dungeon_screen.dart';
 import 'shop_screen.dart';
 import '../models/set_system.dart';
 import 'equip_ui.dart';
+import 'attendance_screen.dart';
+import 'dart:async';
+import '../widgets/enhance_ticker.dart';
+import '../widgets/stat_bottom_sheet.dart';
+import '../utils/sound_manager.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -19,6 +24,7 @@ class _MainScreenState extends State<MainScreen> {
   GameState _gameState = GameState();
   Equipment? _selectedEquip;
   final List<String> _logs = [];
+  final _tickerController = StreamController<TickerMessage>.broadcast();
   int _currentTab = 0;
   bool _isLoading = true;
 
@@ -41,7 +47,14 @@ class _MainScreenState extends State<MainScreen> {
       if (saved != null) _gameState = saved;
       _isLoading = false;
     });
+
+    
   }
+  @override
+void dispose() {
+  _tickerController.close();
+  super.dispose();
+}
 
   Future<void> _saveGame() async {
     await SaveManager.save(_gameState);
@@ -277,27 +290,42 @@ void _executeEnhance(Equipment equip, {required bool useProtect}) {
 
   setState(() {
     switch (result) {
-      case EnhanceResult.success:
-        _logs.insert(0, '✅ ${equip.name} +${equip.enhanceLevel} 강화 성공!');
-        break;
-      case EnhanceResult.fail:
-        _logs.insert(0, '❌ ${equip.name} 강화 실패...');
-        break;
-      case EnhanceResult.destroy:
-        _logs.insert(0, '💥 ${equip.name} 완전 파괴!');
-        // 장착 장비에서 제거 후 기본 장비로 교체
-        final index = _gameState.equipped.indexWhere((e) => e.id == equip.id);
-        if (index != -1) {
-          _gameState.equipped[index] = _getDefaultEquip(equip.slot);
-        }
-        // 인벤토리에 있으면 제거
-        _gameState.inventory.removeWhere((e) => e.id == equip.id);
-        if (_selectedEquip?.id == equip.id) _selectedEquip = null;
-        // 파괴 팝업 표시
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showDestroyPopup(equip);
-        });
-        break;
+case EnhanceResult.success:
+ SoundManager.playSuccess(); // 강화 성공 효과음
+    
+  _logs.insert(0, '✅ ${equip.name} +${equip.enhanceLevel} 강화 성공!');
+  _tickerController.add(TickerMessage(
+    nickname: '나',
+    grade: equip.grade.name,
+    gradeIndex: equip.grade.index,
+    level: equip.enhanceLevel,
+    type: TickerType.success,
+  ));
+  break;
+case EnhanceResult.fail:
+  SoundManager.playFail(); // 강화 실패 효과음
+
+  _logs.insert(0, '❌ ${equip.name} 강화 실패...');
+  _tickerController.add(TickerMessage(
+    nickname: '나',
+    grade: equip.grade.name,
+    gradeIndex: equip.grade.index,
+    level: equip.enhanceLevel,
+    type: TickerType.fail,
+  ));
+  break;
+case EnhanceResult.destroy:
+  SoundManager.playFail(); // 장비 파괴 효과음
+
+  _logs.insert(0, '💥 ${equip.name} 완전 파괴!');
+  _tickerController.add(TickerMessage(
+    nickname: '나',
+    grade: equip.grade.name,
+    gradeIndex: equip.grade.index,
+    level: equip.enhanceLevel,
+    type: TickerType.destroy,
+  ));
+  break;
     }
     if (_logs.length > 50) _logs.removeLast();
   });
@@ -340,40 +368,87 @@ void _executeEnhance(Equipment equip, {required bool useProtect}) {
     }
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildCurrencyBar(),
-            _buildTabBar(),
-            Expanded(child: _buildTabContent()),
-          ],
-        ),
-      ),
+// body의 Column children 마지막에 EnhanceTicker 추가
+body: SafeArea(
+  child: Column(
+    children: [
+      _buildHeader(),
+      _buildCurrencyBar(),
+      _buildTabBar(),
+      Expanded(child: _buildTabContent()),
+      EnhanceTicker(messageStream: _tickerController.stream), // 하단 티커 추가
+    ],
+  ),
+),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFF2A2A3A))),
-      ),
-      child: Column(
-        children: [
-          const Text('⚔️ 업그레이드 레전드 ⚔️',
+Widget _buildHeader() {
+  final canClaim = _gameState.attendance.canClaimToday && 
+                   !_gameState.attendance.isCompleted;
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(vertical: 14),
+    decoration: const BoxDecoration(
+      border: Border(bottom: BorderSide(color: Color(0xFF2A2A3A))),
+    ),
+    child: Column(
+      children: [
+        const Text('⚔️ 업그레이드 레전드 ⚔️',
+            style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFF5C842))),
+        const SizedBox(height: 4),
+        // 기존 전투력 Text 위젯을 GestureDetector로 감싸기
+GestureDetector(
+  onTap: () => showStatBottomSheet(context, _gameState.equipped, _gameState.premiumChargeCount),
+  child: Text(
+    '전투력: ${_formatNumber(_gameState.totalPower)} 📊',
+    style: const TextStyle(color: Colors.grey, fontSize: 12),
+  ),
+),
+        const SizedBox(height: 6),
+        // 출석 버튼
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AttendanceScreen(
+                  gameState: _gameState,
+                  onRewardClaimed: () => setState(() {}),
+                ),
+              ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            decoration: BoxDecoration(
+              color: canClaim 
+                  ? Colors.amber.withOpacity(0.2) 
+                  : const Color(0xFF1A1A2A),
+              border: Border.all(
+                color: canClaim ? Colors.amber : const Color(0xFF2A2A3A),
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              canClaim 
+                  ? '📅 출석 보상 받기!' 
+                  : '📅 출석 (${_gameState.attendance.currentDay}/30일)',
               style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFF5C842))),
-          const SizedBox(height: 4),
-          Text('전투력: ${_formatNumber(_gameState.totalPower)}',
-              style: const TextStyle(color: Colors.grey, fontSize: 12)),
-        ],
-      ),
-    );
-  }
+                color: canClaim ? Colors.amber : Colors.grey,
+                fontSize: 11,
+                fontWeight: canClaim ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildCurrencyBar() {
     return Container(
