@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/game_state.dart';
 import '../models/item_database.dart';
 import '../models/equipment.dart';
+import '../utils/sound_manager.dart'; // 효과음
 
 class ShopScreen extends StatefulWidget {
   final GameState gameState;
@@ -53,6 +54,7 @@ void _openGoldBox({bool isTen = false, bool isHundred = false}) {
   final items = openGoldBox(isTen: isTen, isHundred: isHundred);
   gs.inventory.addAll(items);
   widget.onStateChanged();
+  SoundManager.playGacha(); // 뽑기 효과음
   _showGachaResult(List.from(items), isGoldBox: true, isTen: isTen, isHundred: isHundred);
   }
 /// 다이아 상자 뽑기 실행
@@ -70,6 +72,7 @@ void _openDiamondBox({bool isTen = false, bool isHundred = false}) {
   final items = openDiamondBox(isTen: isTen, isHundred: isHundred);
   gs.inventory.addAll(items);
   widget.onStateChanged();
+  SoundManager.playGacha(); // 뽑기 효과음
   _showGachaResult(List.from(items), isGoldBox: false, isTen: isTen, isHundred: isHundred);
 }
 
@@ -233,11 +236,12 @@ void _reroll(bool ten, bool hundred) {
   else gs.diamond -= cost;
 
   // 새 아이템 생성 후 인벤토리 추가
-  final newItems = isGoldBox
+final newItems = isGoldBox
       ? openGoldBox(isTen: ten, isHundred: hundred)
       : openDiamondBox(isTen: ten, isHundred: hundred);
   gs.inventory.addAll(newItems);
   widget.onStateChanged();
+  SoundManager.playGacha(); // 다시뽑기 효과음
   setDialogState(() { items.clear(); items.addAll(newItems); });
 }
 
