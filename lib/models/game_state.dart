@@ -152,16 +152,21 @@ class GameState {
     final random = Random();
     final roll = random.nextDouble();
 
-    if (roll < data.successRate) {
+    final boostedRate = (data.successRate + premiumChargeCount * 0.10).clamp(0.0, 1.0);
+if (roll < boostedRate) {
       equipment.enhanceLevel++;
       successCount++;
       return EnhanceResult.success;
     }
 
+// 방지권 사용 시 강화 시도마다 무조건 1개 소모
+    if (useProtect && protectScroll > 0) {
+      protectScroll--;
+    }
+
     final destroyRoll = random.nextDouble();
     if (destroyRoll < data.destroyRate) {
-      if (useProtect && protectScroll > 0) {
-        protectScroll--;
+      if (useProtect) {
         failCount++;
         return EnhanceResult.fail;
       }

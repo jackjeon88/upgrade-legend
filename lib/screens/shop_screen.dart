@@ -114,12 +114,14 @@ void _buyStoneHundred() {
 
 /// 다이아 → 골드 환전 팝업
 /// 팝업 닫지 않고 연속 환전 가능, 보유량 실시간 반영
+/// 다이아 → 골드 환전 팝업 — 슬라이더로 수량 선택
 void _exchangeDiamond() {
   final gs = widget.gameState;
   if (gs.diamond < 1) {
     setState(() => _lastResult = '💎 다이아가 없습니다!');
     return;
   }
+  int exchangeAmount = 1;
   showDialog(
     context: context,
     builder: (context) => StatefulBuilder(
@@ -137,12 +139,66 @@ void _exchangeDiamond() {
             const Text('💎 1 = 💰 1,000',
                 style: TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 16),
-            _buildExchangeOption(10, gs, setDialogState: setDialogState),
-            _buildExchangeOption(100, gs, setDialogState: setDialogState),
-            _buildExchangeOption(500, gs, setDialogState: setDialogState),
-            if (gs.diamond > 0)
-              _buildExchangeOption(gs.diamond, gs,
-                  label: '전체', setDialogState: setDialogState),
+            // 슬라이더
+            Slider(
+              value: exchangeAmount.toDouble(),
+              min: 1,
+              max: gs.diamond.toDouble().clamp(1, 10000),
+              divisions: (gs.diamond.clamp(1, 10000) - 1).toInt(),
+              activeColor: const Color(0xFFF5C842),
+              inactiveColor: Colors.white12,
+              onChanged: (v) => setDialogState(() => exchangeAmount = v.toInt()),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('💎 $exchangeAmount',
+                    style: const TextStyle(color: Colors.blueAccent, fontSize: 13)),
+                const Text('→', style: TextStyle(color: Colors.white38)),
+                Text('💰 ${_formatNumber(exchangeAmount * 1000)}',
+                    style: const TextStyle(color: Colors.greenAccent, fontSize: 13)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // 환전 버튼
+            GestureDetector(
+              onTap: gs.diamond >= exchangeAmount
+                  ? () {
+                      gs.exchangeDiamondToGold(exchangeAmount);
+                      widget.onStateChanged();
+                      setState(() => _lastResult =
+                          '💱 💎$exchangeAmount → 💰${_formatNumber(exchangeAmount * 1000)} 환전 완료!');
+                      setDialogState(() {
+                        exchangeAmount = 1; // 환전 후 초기화
+                      });
+                    }
+                  : null,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: gs.diamond >= exchangeAmount
+                      ? const Color(0xFF1A2A1A)
+                      : const Color(0xFF0A0A0F),
+                  border: Border.all(
+                    color: gs.diamond >= exchangeAmount
+                        ? const Color(0xFF2A4A2A)
+                        : Colors.white12,
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  gs.diamond >= exchangeAmount ? '환전하기' : '다이아 부족',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: gs.diamond >= exchangeAmount
+                        ? Colors.greenAccent
+                        : Colors.white24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
         actions: [

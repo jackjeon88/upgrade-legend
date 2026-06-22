@@ -90,9 +90,9 @@ class _StatBottomSheet extends StatelessWidget {
               Row(
                 children: [
                   const Text(
-                    '🔮 강화 성공률 보정',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
+  '🔮 +@화.확ㄹㅠㄹ 보ㅈㅓㅇ%',
+  style: TextStyle(color: Colors.white70, fontSize: 13),
+),
                   const SizedBox(width: 6),
                   const Tooltip(
                     message: '특별한 조건에서 활성화되는 숨겨진 보정입니다',
@@ -109,7 +109,7 @@ class _StatBottomSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  premiumChargeCount > 0 ? '+${premiumChargeCount * 10}%' : '+???%',
+                  '+${(premiumChargeCount * 10).clamp(0, 100)}%',
                   style: const TextStyle(
                     color: Colors.purpleAccent,
                     fontSize: 13,
@@ -122,7 +122,7 @@ class _StatBottomSheet extends StatelessWidget {
           const SizedBox(height: 6),
           // 풍자 포인트 설명
           const Text(
-            '* 강화 성공률 보정은 일부 조건에서 자동 적용됩니다.',
+            '* +???% 자동 적용됩니다.',
             style: TextStyle(color: Colors.white24, fontSize: 10),
           ),
         ],
