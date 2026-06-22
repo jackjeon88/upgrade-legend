@@ -1127,8 +1127,10 @@ GestureDetector(
             Text('전투력: +${item.power}',
                 style: const TextStyle(color: Color(0xFFF5C842))),
             const SizedBox(height: 8),
-            Text('판매가: 💰 ${_formatNumber(_getSellPrice(item))}',
-                style: const TextStyle(color: Colors.greenAccent)),
+            _buildStatSection(item),
+const SizedBox(height: 4),
+Text('판매가: 💰 ${_formatNumber(_getSellPrice(item))}',
+    style: const TextStyle(color: Colors.greenAccent)),
           ],
         ),
         actions: [
@@ -1160,6 +1162,43 @@ GestureDetector(
       ),
     );
   }
+
+  // 스탯 표시 공통 위젯
+Widget _buildStatSection(Equipment item) {
+  final s = item.fakeStats;
+  return Column(
+    children: [
+      const Divider(color: Colors.white12),
+      const SizedBox(height: 4),
+      const Text('스탯', style: TextStyle(color: Colors.white38, fontSize: 11)),
+      const SizedBox(height: 6),
+      _statLine('⚔️ 공격력', s.atk, Colors.redAccent),
+      _statLine('🛡️ 방어력', s.def, Colors.blueAccent),
+      _statLine('❤️ 체력',   s.hp,  Colors.pinkAccent),
+      _statLine('✨ 마력',   s.mag, Colors.purpleAccent),
+      _statLine('💨 민첩',   s.agi, Colors.greenAccent),
+    ],
+  );
+}
+
+Widget _statLine(String label, int value, Color color) {
+  final formatted = value >= 10000
+      ? '${(value / 10000).toStringAsFixed(1)}만'
+      : value >= 1000
+          ? '${(value / 1000).toStringAsFixed(1)}천'
+          : '$value';
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 2),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+        Text(formatted, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+      ],
+    ),
+  );
+}
+
 
   int _getSellPrice(Equipment item) {
     final base = {
@@ -1210,8 +1249,9 @@ GestureDetector(
                 style:
                     const TextStyle(color: Colors.grey, fontSize: 12)),
             Text('전투력: +${equip.power}',
-                style: const TextStyle(
-                    color: Color(0xFFF5C842), fontSize: 12)),
+    style: const TextStyle(
+        color: Color(0xFFF5C842), fontSize: 12)),
+_buildStatSection(equip),
           ],
         ),
         actions: [

@@ -149,12 +149,15 @@ Equipment generateItem(ItemGrade grade, {ItemSlot? slot}) {
   final s = slot ?? _randomSlot();
   final name = _randomName(s, grade);
   final base = basePowerByGrade[grade] ?? 20;
+  // ±15% 랜덤 변동 — 같은 등급이라도 아이템마다 전투력이 미묘하게 다름
+  final variation = 0.85 + _random.nextDouble() * 0.30; // 0.85 ~ 1.15
+  final finalPower = (base * variation).toInt();
   return Equipment(
     id: 'inv_${DateTime.now().microsecondsSinceEpoch}_${_random.nextInt(9999)}',
     name: name,
     grade: grade,
     slot: s,
-    basePower: base,
+    basePower: finalPower,
   );
 }
 
