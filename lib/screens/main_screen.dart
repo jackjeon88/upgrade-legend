@@ -795,24 +795,14 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildInventoryTab() {
     final inventory = _gameState.inventory;
 
-var filtered = inventory.where((item) {
-  if (_filterGrade != null && item.grade != _filterGrade) return false;
-  if (_filterSlot != null && item.slot != _filterSlot) return false;
-  return true;
-}).toList();
+    // 필터 적용
+    var filtered = inventory.where((item) {
+      if (_filterGrade != null && item.grade != _filterGrade) return false;
+      if (_filterSlot != null && item.slot != _filterSlot) return false;
+      return true;
+    }).toList();
 
-// 중복 필터 — 같은 이름+등급이 2개 이상인 것만
-if (_showDuplicates) {
-  final countMap = <String, int>{};
-  for (final item in filtered) {
-    final key = '${item.name}_${item.grade.index}';
-    countMap[key] = (countMap[key] ?? 0) + 1;
-  }
-  filtered = filtered
-      .where((item) => (countMap['${item.name}_${item.grade.index}'] ?? 0) >= 2)
-      .toList();
-}
-
+    // 정렬
     filtered.sort((a, b) {
       switch (_sortBy) {
         case 'grade':
@@ -824,6 +814,19 @@ if (_showDuplicates) {
       }
     });
 
+    // 같은 이름+등급+강화레벨 기준으로 그룹화
+    final Map<String, List<Equipment>> groupMap = {};
+    for (final item in filtered) {
+      final key = '${item.name}_${item.grade.index}_${item.enhanceLevel}';
+      groupMap.putIfAbsent(key, () => []).add(item);
+    }
+
+    // 중복 필터 ON이면 2개 이상인 그룹만
+    var groups = groupMap.values.toList();
+    if (_showDuplicates) {
+      groups = groups.where((g) => g.length >= 2).toList();
+    }
+
     return Column(
       children: [
         Container(
@@ -834,62 +837,25 @@ if (_showDuplicates) {
             children: [
               Row(
                 children: [
-                  Text('총 ${inventory.length}개',
+                  Text('총 ${inventory.length}개 (${groups.length}종)',
                       style: const TextStyle(color: Colors.grey, fontSize: 11)),
                   const Spacer(),
-                  GestureDetector(
-                    onTap: () => setState(() {
-                      _multiSelect = !_multiSelect;
-                      if (!_multiSelect) _selectedItems.clear();
-                    }),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _multiSelect ? const Color(0xFF2A2A4A) : const Color(0xFF1A1A2A),
-                        border: Border.all(color: _multiSelect ? Colors.purple : const Color(0xFF2A2A3A)),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text('선택 판매',
-                          style: TextStyle(color: _multiSelect ? Colors.purple : Colors.grey, fontSize: 11)),
-                    ),
-                  ),
-                  if (_multiSelect) ...[
-                    const SizedBox(width: 6),
+                  if (_filterGrade != null || _filterSlot != null || _showDuplicates)
                     GestureDetector(
                       onTap: () => setState(() {
-                        if (_selectedItems.length == filtered.length) {
-                          _selectedItems.clear();
-                        } else {
-                          _selectedItems.addAll(filtered.map((e) => e.id));
-                        }
+                        _filterGrade = null;
+                        _filterSlot = null;
+                        _showDuplicates = false;
                       }),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A2A),
-                          border: Border.all(color: const Color(0xFF2A2A3A)),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          _selectedItems.length == filtered.length ? '전체해제' : '전체선택',
-                          style: const TextStyle(color: Colors.grey, fontSize: 11),
-                        ),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(width: 6),
-                  if (_multiSelect && _selectedItems.isNotEmpty)
-                    GestureDetector(
-                      onTap: _sellSelected,
-                      child: Container(
+                        margin: const EdgeInsets.only(right: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFF2A1A1A),
                           border: Border.all(color: Colors.red),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Text('${_selectedItems.length}개 판매',
-                            style: const TextStyle(color: Colors.red, fontSize: 11)),
+                        child: const Text('✕ 필터', style: TextStyle(color: Colors.red, fontSize: 11)),
                       ),
                     ),
                 ],
@@ -903,23 +869,24 @@ if (_showDuplicates) {
                   _buildSortBtn('강화', 'enhance'),
                   const SizedBox(width: 4),
                   _buildSortBtn('슬롯', 'slot'),
-                  const Spacer(),
-                  
-                  // 여기에 중복 버튼 추가
+                  const SizedBox(width: 8),
+                  // 중복 필터 버튼
                   GestureDetector(
                     onTap: () => setState(() => _showDuplicates = !_showDuplicates),
-                    
-                  ),
-                  
-                  if (_filterGrade != null || _filterSlot != null)
-                    GestureDetector(
-                      onTap: () => setState(() {
-                        _filterGrade = null;
-                        _filterSlot = null;
-                        _showDuplicates = false; // 여기 추가
-                      }),
-                      child: const Text('✕ 필터', style: TextStyle(color: Colors.red, fontSize: 11)),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: _showDuplicates ? Colors.orange.withOpacity(0.2) : const Color(0xFF111118),
+                        border: Border.all(
+                            color: _showDuplicates ? Colors.orange : const Color(0xFF2A2A3A)),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text('중복',
+                          style: TextStyle(
+                              color: _showDuplicates ? Colors.orange : Colors.grey,
+                              fontSize: 10)),
                     ),
+                  ),
                 ],
               ),
               const SizedBox(height: 4),
@@ -936,36 +903,28 @@ if (_showDuplicates) {
           ),
         ),
         Expanded(
-          child: filtered.isEmpty
+          child: groups.isEmpty
               ? const Center(child: Text('아이템이 없습니다', style: TextStyle(color: Colors.grey)))
               : GridView.builder(
                   padding: const EdgeInsets.all(8),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 7, childAspectRatio: 0.8,
-                    crossAxisSpacing: 4, mainAxisSpacing: 4,
+                    crossAxisCount: 5, childAspectRatio: 0.75,
+                    crossAxisSpacing: 6, mainAxisSpacing: 6,
                   ),
-                  itemCount: filtered.length,
+                  itemCount: groups.length,
                   itemBuilder: (context, index) {
-                    final item = filtered[index];
-                    final isSelected = _selectedItems.contains(item.id);
+                    final group = groups[index];
+                    final item = group.first;
+                    final count = group.length;
+
                     return GestureDetector(
-                      onTap: () {
-                        if (_multiSelect) {
-                          setState(() {
-                            if (isSelected) _selectedItems.remove(item.id);
-                            else _selectedItems.add(item.id);
-                          });
-                        } else {
-                          final realIndex = inventory.indexOf(item);
-                          _showItemDialog(item, realIndex);
-                        }
-                      },
+                      onTap: () => _showStackedItemDialog(group),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF2A1A2A) : const Color(0xFF111118),
+                          color: const Color(0xFF111118),
                           border: Border.all(
-                            color: isSelected ? Colors.purple : _gradeColor(item.grade).withOpacity(0.6),
-                            width: isSelected ? 2 : 1,
+                            color: _gradeColor(item.grade).withOpacity(0.7),
+                            width: 1.5,
                           ),
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -974,18 +933,39 @@ if (_showDuplicates) {
                             Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(item.slot.emoji, style: const TextStyle(fontSize: 14)),
+                                Text(item.slot.emoji,
+                                    style: const TextStyle(fontSize: 20)),
                                 const SizedBox(height: 2),
                                 Text(item.name,
-                                    style: TextStyle(color: _gradeColor(item.grade), fontSize: 8, fontWeight: FontWeight.bold),
-                                    textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis),
+                                    style: TextStyle(
+                                        color: _gradeColor(item.grade),
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis),
                                 Text('+${item.enhanceLevel}',
-                                    style: const TextStyle(color: Colors.grey, fontSize: 7)),
+                                    style: const TextStyle(
+                                        color: Colors.white70, fontSize: 9)),
                               ],
                             ),
-                            if (_multiSelect && isSelected)
-                              const Positioned(top: 2, right: 2,
-                                  child: Text('✓', style: TextStyle(color: Colors.purple, fontSize: 10))),
+                            // 수량 뱃지
+                            if (count > 1)
+                              Positioned(
+                                top: 3, right: 3,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: _gradeColor(item.grade),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text('x$count',
+                                      style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold)),
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -994,6 +974,108 @@ if (_showDuplicates) {
                 ),
         ),
       ],
+    );
+  }
+
+  /// 스택된 아이템 탭 시 팝업 — 슬라이더로 수량 선택 후 판매/장착
+  void _showStackedItemDialog(List<Equipment> group) {
+    final item = group.first;
+    final count = group.length;
+    int sellCount = 1;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF111118),
+          title: Text(item.name,
+              style: TextStyle(
+                  color: _gradeColor(item.grade), fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(item.slot.emoji, style: const TextStyle(fontSize: 48)),
+              const SizedBox(height: 4),
+              Text('등급: ${item.grade.name}',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              Text('강화: +${item.enhanceLevel}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              Text('전투력: +${item.power}',
+                  style: const TextStyle(color: Color(0xFFF5C842), fontSize: 12)),
+              _buildStatSection(item),
+              const Divider(color: Colors.white12),
+              // 수량 표시
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('보유 수량', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('$count개', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // 판매 수량 슬라이더
+              const Text('판매 수량', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              Slider(
+                value: sellCount.toDouble(),
+                min: 1,
+                max: count.toDouble(),
+                divisions: count - 1,
+                activeColor: const Color(0xFFF5C842),
+                inactiveColor: Colors.white12,
+                onChanged: (v) => setDialogState(() => sellCount = v.toInt()),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('$sellCount개 판매',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text('💰 ${_formatNumber(_getSellPrice(item) * sellCount)}',
+                      style: const TextStyle(color: Colors.greenAccent, fontSize: 12)),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('닫기', style: TextStyle(color: Colors.grey)),
+            ),
+            // 장착 (1개만)
+            TextButton(
+              onPressed: () {
+                final invIndex = _gameState.inventory.indexOf(item);
+                if (invIndex != -1) {
+                  _equipItem(item, invIndex);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('장착', style: TextStyle(color: Colors.greenAccent)),
+            ),
+            // 판매
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  int sold = 0;
+                  _gameState.inventory.removeWhere((i) {
+                    if (sold < sellCount &&
+                        i.name == item.name &&
+                        i.grade == item.grade &&
+                        i.enhanceLevel == item.enhanceLevel) {
+                      _gameState.gold += _getSellPrice(i);
+                      sold++;
+                      return true;
+                    }
+                    return false;
+                  });
+                });
+                _saveGame();
+                Navigator.pop(context);
+              },
+              child: const Text('판매', style: TextStyle(color: Color(0xFFF5C842))),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
