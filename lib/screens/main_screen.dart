@@ -33,6 +33,7 @@ class _MainScreenState extends State<MainScreen> {
   ItemGrade? _filterGrade;
   ItemSlot? _filterSlot;
   bool _multiSelect = false;
+  bool _showDuplicates = false; // 중복 아이템 필터
   Set<String> _selectedItems = {};
 
   // 강화 토글
@@ -794,11 +795,23 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildInventoryTab() {
     final inventory = _gameState.inventory;
 
-    var filtered = inventory.where((item) {
-      if (_filterGrade != null && item.grade != _filterGrade) return false;
-      if (_filterSlot != null && item.slot != _filterSlot) return false;
-      return true;
-    }).toList();
+var filtered = inventory.where((item) {
+  if (_filterGrade != null && item.grade != _filterGrade) return false;
+  if (_filterSlot != null && item.slot != _filterSlot) return false;
+  return true;
+}).toList();
+
+// 중복 필터 — 같은 이름+등급이 2개 이상인 것만
+if (_showDuplicates) {
+  final countMap = <String, int>{};
+  for (final item in filtered) {
+    final key = '${item.name}_${item.grade.index}';
+    countMap[key] = (countMap[key] ?? 0) + 1;
+  }
+  filtered = filtered
+      .where((item) => (countMap['${item.name}_${item.grade.index}'] ?? 0) >= 2)
+      .toList();
+}
 
     filtered.sort((a, b) {
       switch (_sortBy) {
@@ -891,9 +904,20 @@ class _MainScreenState extends State<MainScreen> {
                   const SizedBox(width: 4),
                   _buildSortBtn('슬롯', 'slot'),
                   const Spacer(),
+                  
+                  // 여기에 중복 버튼 추가
+                  GestureDetector(
+                    onTap: () => setState(() => _showDuplicates = !_showDuplicates),
+                    
+                  ),
+                  
                   if (_filterGrade != null || _filterSlot != null)
                     GestureDetector(
-                      onTap: () => setState(() { _filterGrade = null; _filterSlot = null; }),
+                      onTap: () => setState(() {
+                        _filterGrade = null;
+                        _filterSlot = null;
+                        _showDuplicates = false; // 여기 추가
+                      }),
                       child: const Text('✕ 필터', style: TextStyle(color: Colors.red, fontSize: 11)),
                     ),
                 ],
