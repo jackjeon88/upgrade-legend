@@ -144,7 +144,9 @@ void _exchangeDiamond() {
               value: exchangeAmount.toDouble(),
               min: 1,
               max: gs.diamond.toDouble().clamp(1, 10000),
-              divisions: (gs.diamond.clamp(1, 10000) - 1).toInt(),
+              divisions: gs.diamond.clamp(1, 10000) > 1 
+    ? (gs.diamond.clamp(1, 10000) - 1).toInt() 
+    : null,
               activeColor: const Color(0xFFF5C842),
               inactiveColor: Colors.white12,
               onChanged: (v) => setDialogState(() => exchangeAmount = v.toInt()),

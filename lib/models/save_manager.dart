@@ -1,30 +1,54 @@
 // lib/models/save_manager.dart
 
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'equipment.dart';
 import 'game_state.dart';
 import 'attendance.dart';
+import '../services/firestore_service.dart';
 
 class SaveManager {
   static const String _key = 'game_save';
 
-  // 게임 상태 저장
+  // 게임 상태 저장 (로컬 + Firestore 동시 저장)
   static Future<void> save(GameState state) async {
-    final prefs = await SharedPreferences.getInstance();
     final data = _encodeState(state);
+
+    // 1) 로컬 저장 (오프라인 대비)
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key, jsonEncode(data));
+
+    // 2) Firestore 저장 (로그인된 경우에만)
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await FirestoreService().saveGameData(uid, data);
+    }
   }
 
-  // 게임 상태 불러오기
+  // 게임 상태 불러오기 (Firestore 우선, 없으면 로컬)
   static Future<GameState?> load() async {
     try {
+      // 1) 로그인된 경우 Firestore에서 먼저 불러오기
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final cloudData = await FirestoreService().loadGameData(uid);
+        if (cloudData != null) {
+          // Firestore 데이터를 로컬에도 동기화
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_key, jsonEncode(cloudData));
+          return _decodeState(cloudData);
+        }
+      }
+
+      // 2) Firestore에 없으면 로컬 저장 데이터 사용
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_key);
       if (raw == null) return null;
       final data = jsonDecode(raw) as Map<String, dynamic>;
       return _decodeState(data);
     } catch (e) {
+      print('불러오기 오류: $e');
       return null;
     }
   }
@@ -51,8 +75,8 @@ class SaveManager {
       'totalGoldSpent': s.totalGoldSpent,
       'equipped': s.equipped.map(_encodeEquip).toList(),
       'inventory': s.inventory.map(_encodeEquip).toList(),
-      'attendance': s.attendance.toJson(),           // ✅ 출석
-      'premiumChargeCount': s.premiumChargeCount,    // ✅ 강화 성공률 부스터
+      'attendance': s.attendance.toJson(),
+      'premiumChargeCount': s.premiumChargeCount,
     };
   }
 
@@ -73,17 +97,17 @@ class SaveManager {
       destroyCount: data['destroyCount'] ?? 0,
       totalGoldSpent: data['totalGoldSpent'] ?? 0,
       equipped: (data['equipped'] as List?)
-              ?.map((e) => _decodeEquip(e))
+              ?.map((e) => _decodeEquip(e as Map<String, dynamic>))
               .toList() ??
           [],
       inventory: (data['inventory'] as List?)
-              ?.map((e) => _decodeEquip(e))
+              ?.map((e) => _decodeEquip(e as Map<String, dynamic>))
               .toList() ??
           [],
       attendance: data['attendance'] != null
           ? AttendanceState.fromJson(data['attendance'])
-          : const AttendanceState(),                          // ✅ 출석
-      premiumChargeCount: data['premiumChargeCount'] ?? 0,   // ✅ 강화 성공률 부스터
+          : const AttendanceState(),
+      premiumChargeCount: data['premiumChargeCount'] ?? 0,
     );
   }
 

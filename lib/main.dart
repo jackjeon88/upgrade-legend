@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
-import 'screens/main_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'screens/login_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const UpgradeLegendApp());
 }
 
@@ -20,7 +26,8 @@ class UpgradeLegendApp extends StatelessWidget {
           secondary: Color(0xFFE03030),
         ),
       ),
-      home: const MainScreen(),
+      // 항상 로그인 화면(타이틀)부터 시작
+      home: const LoginScreen(),
     );
   }
 }

@@ -1019,7 +1019,7 @@ class _MainScreenState extends State<MainScreen> {
                 value: sellCount.toDouble(),
                 min: 1,
                 max: count.toDouble(),
-                divisions: count - 1,
+                divisions: count > 1 ? count - 1 : null,
                 activeColor: const Color(0xFFF5C842),
                 inactiveColor: Colors.white12,
                 onChanged: (v) => setDialogState(() => sellCount = v.toInt()),
@@ -1719,7 +1719,9 @@ class _MainScreenState extends State<MainScreen> {
                 value: exchangeAmount.toDouble(),
                 min: 1,
                 max: _gameState.diamond.toDouble().clamp(1, 10000),
-                divisions: (_gameState.diamond.clamp(1, 10000) - 1).toInt(),
+                divisions: _gameState.diamond.clamp(1, 10000) > 1 
+    ? (_gameState.diamond.clamp(1, 10000) - 1).toInt() 
+    : null,
                 activeColor: const Color(0xFFF5C842),
                 inactiveColor: Colors.white12,
                 onChanged: (v) => setDialogState(() => exchangeAmount = v.toInt()),

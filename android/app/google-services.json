@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "143374398852",
+    "project_id": "upgrade-legend",
+    "storage_bucket": "upgrade-legend.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:143374398852:android:c42d6b4a59e65eac0c99d1",
+        "android_client_info": {
+          "package_name": "com.example.upgrade_legend"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "143374398852-hkkoeu9m5v6sijkjfeso4riot321de4g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBE-b5-_yWweDCaTMl9oPRNbXdAdbjQDls"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "143374398852-hkkoeu9m5v6sijkjfeso4riot321de4g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
